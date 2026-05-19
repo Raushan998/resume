@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Raushan Kumar Raman — Dev World (Interactive Resume)</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky-top: #6ec6ff;
+    --sky-bottom: #b3e5fc;
+    --ground: #8b5a2b;
+    --grass: #4caf50;
+    --brick: #d2691e;
+    --coin: #ffd700;
+    --accent: #ff5252;
+    --text: #1a1a1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: #87ceeb;
+    font-family: 'VT323', monospace;
+    overflow: hidden;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    color: var(--text);
+  }
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    text-align: center;
+  }
+  .hidden { display: none !important; }
+
+  /* ============ TITLE ============ */
+  #title-screen {
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+  }
+  #title-screen::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 25%;
+    background: linear-gradient(180deg, transparent, #4caf50 30%, #2e7d32 100%);
+    z-index: 0;
+  }
+  #title-screen > * { position: relative; z-index: 1; }
+  #title-screen h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(20px, 5vw, 44px);
+    color: white;
+    text-shadow:
+      3px 3px 0 #c62828,
+      6px 6px 0 rgba(0,0,0,0.3);
+    margin-bottom: 16px;
+    line-height: 1.4;
+    animation: bounce 1.5s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  #title-screen .tagline {
+    font-size: 26px;
+    color: #1565c0;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 0 white;
+  }
+  #title-screen .byline {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 28px;
+    background: rgba(255,255,255,0.85);
+    padding: 10px 20px;
+    border-radius: 6px;
+    max-width: 600px;
+  }
+  .pixel-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    color: white;
+    background: #e53935;
+    border: 4px solid #1a1a1a;
+    padding: 14px 28px;
+    margin: 8px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #1a1a1a;
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .pixel-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #1a1a1a; }
+  .pixel-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #1a1a1a; }
+  .pixel-btn.green { background: #43a047; }
+  .pixel-btn.blue  { background: #1976d2; }
+  .pixel-btn.yellow{ background: #fbc02d; color: #1a1a1a; }
+  .blink { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.3; } }
+  #title-screen .hero-mario {
+    font-size: 80px;
+    margin-bottom: 12px;
+    animation: hop 0.6s ease-in-out infinite;
+  }
+  @keyframes hop {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  /* ============ GAME ============ */
+  #game-screen {
+    display: none;
+    flex-direction: column;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 80%);
+    padding: 0;
+  }
+  #hud {
+    width: 100%;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+    padding: 10px 18px;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    border-bottom: 4px solid #1a1a1a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+  }
+  #hud .stat { display: flex; align-items: center; gap: 6px; }
+  #hud .label { color: #ffeb3b; }
+  #hud .stage { color: #4fc3f7; font-size: 12px; }
+  #game-wrap {
+    flex: 1; position: relative; width: 100%;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 70%, #4caf50 100%);
+    overflow: hidden;
+  }
+  #game {
+    display: block;
+    width: 100%; height: 100%;
+    image-rendering: pixelated;
+  }
+  #toast {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.85); color: #ffeb3b;
+    padding: 6px 14px;
+    border: 3px solid #ffeb3b;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(6px); }
+  #interact-hint {
+    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #ffeb3b; color: #1a1a1a;
+    padding: 6px 14px;
+    border: 3px solid #1a1a1a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    box-shadow: 3px 3px 0 #1a1a1a;
+    animation: bounce 0.6s ease-in-out infinite;
+  }
+
+  /* ============ Touch ============ */
+  #touch-controls { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 16px; pointer-events: none; z-index: 10; }
+  #touch-controls .left-pad,
+  #touch-controls .right-pad { pointer-events: auto; display: flex; gap: 8px; }
+  #touch-controls .left-pad  { float: left; }
+  #touch-controls .right-pad { float: right; }
+  .touch-btn {
+    width: 62px; height: 62px;
+    background: rgba(0,0,0,0.65);
+    border: 3px solid white;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.6);
+  }
+  .touch-btn.jump { background: #e53935; }
+  @media (pointer: coarse) {
+    #touch-controls { display: block; }
+    #instructions   { display: none; }
+  }
+
+  /* ============ Dialog ============ */
+  #dialog {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 20;
+  }
+  #dialog .box {
+    background: white;
+    border: 5px solid #1a1a1a;
+    border-radius: 6px;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
+    padding: 20px 24px;
+    max-width: 560px; width: 100%;
+    max-height: 88vh; overflow-y: auto;
+    position: relative;
+  }
+  #dialog .box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 28px;
+    background: #e53935; border-bottom: 3px solid #1a1a1a;
+  }
+  #dialog .emoji {
+    font-size: 56px; text-align: center; margin: 16px 0 8px;
+    position: relative;
+  }
+  #dialog h2 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px; color: #1a1a1a; text-align: center;
+    line-height: 1.5; margin-bottom: 6px;
+  }
+  #dialog .subtitle { text-align: center; color: #1976d2; font-size: 22px; margin-bottom: 2px; }
+  #dialog .dates    { text-align: center; color: #757575; font-size: 18px; margin-bottom: 4px; }
+  #dialog .stack    {
+    text-align: center; color: #c62828; font-size: 17px;
+    margin-bottom: 14px; padding-bottom: 12px;
+    border-bottom: 2px dashed #bdbdbd;
+  }
+  #dialog ul { list-style: none; padding: 0; }
+  #dialog ul li {
+    padding: 6px 0 6px 24px; position: relative;
+    font-size: 19px; line-height: 1.45; color: #212121;
+  }
+  #dialog ul li::before { content: '★'; position: absolute; left: 0; color: #fbc02d; }
+  #dialog .actions { margin-top: 18px; text-align: center; }
+
+  /* ============ Win Screen ============ */
+  #win-screen {
+    background: linear-gradient(180deg, #ffd54f 0%, #ff8a65 50%, #c62828 100%);
+  }
+  #win-screen .flag { font-size: 100px; animation: hop 0.5s ease-in-out infinite; }
+  #win-screen h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(18px, 4vw, 32px);
+    color: white;
+    text-shadow: 3px 3px 0 #1a1a1a;
+    margin: 16px 0;
+  }
+  #win-screen .quote {
+    font-size: 22px; color: #1a1a1a; max-width: 600px;
+    margin: 0 auto 20px; line-height: 1.45;
+    background: rgba(255,255,255,0.88);
+    padding: 12px 20px; border-radius: 6px;
+  }
+  #win-screen .contact-card {
+    background: white; color: #1a1a1a;
+    border: 5px solid #1a1a1a; border-radius: 6px;
+    padding: 18px 22px; margin: 14px auto;
+    max-width: 460px;
+    font-size: 20px; text-align: left;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.4);
+  }
+  #win-screen .contact-card div { padding: 5px 0; }
+  #win-screen .contact-card a {
+    color: #c62828; text-decoration: none; border-bottom: 1px dashed #c62828;
+  }
+  #win-screen .actions { margin-top: 16px; }
+
+  /* ============ Confetti ============ */
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
+  @media (max-width: 500px) {
+    #hud { font-size: 10px; padding: 6px 10px; }
+    #dialog .box { padding: 14px; }
+    #dialog ul li { font-size: 17px; }
+    .touch-btn { width: 56px; height: 56px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== TITLE SCREEN ============== -->
+<div id="title-screen" class="screen">
+  <div class="hero-mario">🏃‍♂️💨</div>
+  <h1>DEV WORLD<br><span style="color:#fff59d">RAUSHAN'S RESUME</span></h1>
+  <div class="tagline">Press → to RUN. Press SPACE to JUMP.</div>
+  <div class="byline">
+    Side-scroll through 4.5+ years of Ruby on Rails wizardry.<br>
+    Smash blocks for project intel. Grab the coins. Reach the flag.
+  </div>
+  <div>
+    <button class="pixel-btn green" id="start-btn">▶ START GAME</button>
+    <button class="pixel-btn yellow" id="skip-btn">Skip to Contact</button>
+  </div>
+  <div style="margin-top:24px;color:#1a1a1a;font-size:16px;background:rgba(255,255,255,0.7);padding:8px 14px;border-radius:4px;" class="blink">
+    💡 Hit the <strong>?-Blocks</strong> to read about each job
+  </div>
+</div>
+
+<!-- ============== GAME SCREEN ============== -->
+<div id="game-screen" class="screen">
+  <div id="hud">
+    <div class="stat">🪙 <span class="label">COINS</span> <span id="coins-count">0</span>/<span id="coins-total">0</span></div>
+    <div class="stat">📦 <span class="label">JOBS</span> <span id="jobs-count">0</span>/<span id="jobs-total">0</span></div>
+    <div class="stat">⭐ <span class="label">SCORE</span> <span id="score">0000</span></div>
+    <div class="stat stage">🌍 <span id="stage-name">DEV WORLD 1-1</span></div>
+  </div>
+  <div id="game-wrap">
+    <canvas id="game"></canvas>
+    <div id="toast"></div>
+    <div id="interact-hint" class="hidden">Hit ? Block!</div>
+  </div>
+</div>
+
+<!-- ============== TOUCH ============== -->
+<div id="touch-controls">
+  <div class="left-pad">
+    <div class="touch-btn" data-key="ArrowLeft">◀</div>
+    <div class="touch-btn" data-key="ArrowRight">▶</div>
+  </div>
+  <div class="right-pad">
+    <div class="touch-btn jump" data-key=" ">A</div>
+  </div>
+</div>
+
+<!-- ============== DIALOG ============== -->
+<div id="dialog">
+  <div class="box">
+    <div class="emoji" id="d-emoji"></div>
+    <h2 id="d-title"></h2>
+    <div class="subtitle" id="d-subtitle"></div>
+    <div class="dates" id="d-dates"></div>
+    <div class="stack" id="d-stack"></div>
+    <ul id="d-bullets"></ul>
+    <div class="actions">
+      <button class="pixel-btn green" id="d-close">▶ KEEP GOING</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== WIN SCREEN ============== -->
+<div id="win-screen" class="screen hidden">
+  <div class="flag">🏁</div>
+  <h1>YOU REACHED THE FLAG!</h1>
+  <div class="quote">
+    "You ran through 4.5+ years of code with Raushan.<br>
+    Coins collected. Companies cleared. Now claim the prize: <strong style="color:#c62828">HIRE THE HERO.</strong>"
+  </div>
+  <div class="contact-card">
+    <div>📧 <a href="mailto:raushan.raman23011999@gmail.com">raushan.raman23011999@gmail.com</a></div>
+    <div>📱 +91 7488168074</div>
+    <div>💼 <a href="https://www.linkedin.com/in/raushan-kumar-raman-a90a6815b/" target="_blank" rel="noopener">LinkedIn Profile</a></div>
+    <div>💻 <a href="https://github.com/Raushan998" target="_blank" rel="noopener">github.com/Raushan998</a></div>
+    <div>📍 Patna, Bihar &nbsp;·&nbsp; Open to relocate</div>
+  </div>
+  <div class="actions">
+    <button class="pixel-btn" onclick="window.location.href='mailto:raushan.raman23011999@gmail.com?subject=Let%27s%20talk%20about%20a%20role'">📨 EMAIL ME</button>
+    <button class="pixel-btn green" id="restart-btn">↻ PLAY AGAIN</button>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+// =================================================================
+//  CONFIG / WORLD DATA
+// =================================================================
+const WORLD_W = 6000;
+const VIEW_H  = 540;             // canvas internal height (camera follows X only)
+const GROUND_Y = VIEW_H - 80;    // top of the ground tile
+const PLAYER_W = 28, PLAYER_H = 36;
+const GRAVITY = 0.7;
+const MOVE_ACCEL = 0.6, MOVE_MAX = 4.5, FRICTION = 0.82;
+const JUMP_FORCE = -13.5;
+
+// Career milestones (placed along the level)
+const JOB_DATA = [
+  {
+    id: 'haldia', x: 700, color: '#4ecdc4', emoji: '🎓',
+    title: 'HALDIA INSTITUTE OF TECHNOLOGY',
+    subtitle: 'B.Tech, Mechanical Engineering',
+    dates: 'May 2021 · Haldia, West Bengal',
+    stack: 'GPA: 8.5 / 10',
+    bullets: [
+      'Bachelor of Technology — GPA 8.5/10',
+      'Self-taught CS: Data Structures, Algorithms, Operating Systems',
+      'Self-taught: Computer Networks, Databases, System Design',
+      'Pivoted from Mechanical Engineering into Software via OSS & projects',
+    ],
+  },
+  {
+    id: 'curieo', x: 1700, color: '#ffd93d', emoji: '🏫',
+    title: 'CURIEO PRIVATE LIMITED',
+    subtitle: 'Software Engineer · Jaipur, India',
+    dates: 'Nov 2021 – Nov 2022',
+    stack: 'Rails · PostgreSQL · Google Cloud · Bitbucket',
+    bullets: [
+      'Developed EdTech features: automated homework, class slot allocation',
+      'Integrated Google Cloud, Drive, SendGrid, Instamojo — 50% reliability lift',
+      'JWT + Google OAuth auth — unauthorized access down 20%',
+      'Set up CI/CD pipelines on Bitbucket for Rails apps',
+    ],
+  },
+  {
+    id: 'builder', x: 2900, color: '#a8e6cf', emoji: '🏢',
+    title: 'BUILDER.AI',
+    subtitle: 'Software Engineer · Gurgaon, India',
+    dates: 'Nov 2022 – Jul 2024',
+    stack: 'Rails · React · Docker · Kubernetes · Helm · AWS',
+    bullets: [
+      'Owned end-to-end features: schema design + 10+ REST API endpoints',
+      'Reduced release time by 50% via Docker, K8s & Helm-chart deploys',
+      'Cache-based querying for 300K+ records, slashed query latency',
+      'Lifted test coverage from 70.8% → 91.2% with RSpec',
+      'Built 15+ reusable React components with Context API',
+    ],
+  },
+  {
+    id: 'freelance', x: 4000, color: '#c9b1ff', emoji: '💻',
+    title: 'FREELANCE (CONTRACTOR)',
+    subtitle: 'Freelance Software Engineer · Remote',
+    dates: 'Sept 2024 – Oct 2025',
+    stack: 'Rails · Twilio · PostgreSQL · React',
+    bullets: [
+      'Built real-time chat for SaaS construction product (Twilio + Action Cable)',
+      'Developed hotel management platform: booking, admin, dynamic pricing, RBAC',
+      'Integrated Arctic Admin for cleaner backend & faster CRUD workflows',
+      'API response time +40% — fixed N+1, optimized SQL, fragment caching',
+    ],
+  },
+  {
+    id: 'inwork', x: 5100, color: '#ff8b94', emoji: '🚀',
+    title: 'INWORK GLOBAL — SENIOR ENGINEER',
+    subtitle: 'Senior Software Engineer · Gurgaon, India',
+    dates: 'Oct 2025 – Present',
+    stack: 'Rails · PostgreSQL · AWS · Redis · Claude AI',
+    bullets: [
+      'Integrated FloPay payment gateway with idempotency & retry-safe state machines',
+      'Architected GoHighLevel CRM syncing across onboarding & user workflows',
+      'Multi-layer caching cut external API usage 50%, p95 down ~30%',
+      'Led production incident response — RCA, debugging, durable fixes',
+      'Built Claude AI agents to automate dev workflows & boost team throughput',
+    ],
+  },
+];
+
+// Coins (skills) scattered along the way
+const COINS = [
+  { x: 200,  y: GROUND_Y - 80,  name: 'Ruby',       emoji: '💎' },
+  { x: 320,  y: GROUND_Y - 130, name: 'Rails',      emoji: '🚂' },
+  { x: 500,  y: GROUND_Y - 90,  name: 'JS',         emoji: '📜' },
+  { x: 900,  y: GROUND_Y - 160, name: 'Python',     emoji: '🐍' },
+  { x: 1100, y: GROUND_Y - 110, name: 'PostgreSQL', emoji: '🐘' },
+  { x: 1300, y: GROUND_Y - 80,  name: 'SQL',        emoji: '📊' },
+  { x: 1900, y: GROUND_Y - 150, name: 'React',      emoji: '⚛️' },
+  { x: 2200, y: GROUND_Y - 110, name: 'REST',       emoji: '🔌' },
+  { x: 2400, y: GROUND_Y - 80,  name: 'JWT',        emoji: '🔑' },
+  { x: 3100, y: GROUND_Y - 160, name: 'Docker',     emoji: '🐳' },
+  { x: 3300, y: GROUND_Y - 110, name: 'Kubernetes', emoji: '⚓' },
+  { x: 3500, y: GROUND_Y - 80,  name: 'Helm',       emoji: '⛵' },
+  { x: 3700, y: GROUND_Y - 130, name: 'RSpec',      emoji: '🧪' },
+  { x: 4200, y: GROUND_Y - 90,  name: 'Twilio',     emoji: '📞' },
+  { x: 4400, y: GROUND_Y - 150, name: 'Action Cable', emoji: '⚡' },
+  { x: 4700, y: GROUND_Y - 80,  name: 'Caching',    emoji: '💾' },
+  { x: 5200, y: GROUND_Y - 150, name: 'AWS',        emoji: '☁️' },
+  { x: 5400, y: GROUND_Y - 110, name: 'Redis',      emoji: '🟥' },
+  { x: 5600, y: GROUND_Y - 80,  name: 'Claude AI',  emoji: '🤖' },
+];
+
+// Static platforms (besides the continuous ground)
+const PLATFORMS = [
+  // Tutorial floats
+  { x: 280,  y: GROUND_Y - 60,  w: 80, h: 16 },
+  { x: 460,  y: GROUND_Y - 110, w: 80, h: 16 },
+  { x: 880,  y: GROUND_Y - 110, w: 100, h: 16 },
+  { x: 1080, y: GROUND_Y - 60,  w: 80, h: 16 },
+  { x: 1860, y: GROUND_Y - 110, w: 100, h: 16 },
+  { x: 2180, y: GROUND_Y - 70,  w: 80, h: 16 },
+  { x: 3080, y: GROUND_Y - 110, w: 100, h: 16 },
+  { x: 3280, y: GROUND_Y - 70,  w: 80, h: 16 },
+  { x: 3480, y: GROUND_Y - 130, w: 80, h: 16 },
+  { x: 4180, y: GROUND_Y - 60,  w: 80, h: 16 },
+  { x: 4380, y: GROUND_Y - 110, w: 100, h: 16 },
+  { x: 4680, y: GROUND_Y - 60,  w: 80, h: 16 },
+  { x: 5180, y: GROUND_Y - 110, w: 80, h: 16 },
+  { x: 5380, y: GROUND_Y - 70,  w: 80, h: 16 },
+  { x: 5580, y: GROUND_Y - 130, w: 80, h: 16 },
+];
+
+// Question blocks for each job (above ground)
+const QBLOCKS = JOB_DATA.map(j => ({
+  jobId: j.id,
+  x: j.x, y: GROUND_Y - 140,
+  w: 36, h: 36,
+  hit: false,
+  bobT: Math.random() * 100,
+}));
+
+// Background hills (parallax)
+const HILLS = [];
+for (let i = 0; i < 25; i++) {
+  HILLS.push({ x: i * 280 + 100, h: 60 + Math.random() * 50 });
+}
+// Clouds (parallax)
+const CLOUDS = [];
+for (let i = 0; i < 30; i++) {
+  CLOUDS.push({ x: i * 250 + Math.random() * 200, y: 30 + Math.random() * 120, w: 60 + Math.random() * 40 });
+}
+
+// Flag at end
+const FLAG = { x: WORLD_W - 200, y: GROUND_Y - 200, h: 200 };
+
+// =================================================================
+//  CANVAS + STATE
+// =================================================================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const confetti = document.getElementById('confetti');
+const cctx = confetti.getContext('2d');
+
+let viewW = 800;   // internal width — recalculated on resize
+let cameraX = 0;
+
+const player = {
+  x: 80, y: GROUND_Y - PLAYER_H,
+  vx: 0, vy: 0,
+  w: PLAYER_W, h: PLAYER_H,
+  onGround: false,
+  facing: 'right',
+  walkT: 0,
+};
+
+const keys = {};
+let gameRunning = false;
+let dialogOpen = false;
+let nearBlock = null;
+let coinsCollected = 0;
+let jobsRead = new Set();
+let score = 0;
+let won = false;
+
+const $ = (id) => document.getElementById(id);
+$('coins-total').textContent = COINS.length;
+$('jobs-total').textContent = JOB_DATA.length;
+
+// =================================================================
+//  RESIZE
+// =================================================================
+function resize() {
+  const wrap = document.getElementById('game-wrap');
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  viewW = rect.width;
+  confetti.width = window.innerWidth;
+  confetti.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+
+// =================================================================
+//  INPUT
+// =================================================================
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !$('title-screen').classList.contains('hidden')) {
+    startGame(); return;
+  }
+  if (e.key === ' ' || e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    e.preventDefault();
+    if (player.onGround) {
+      player.vy = JUMP_FORCE;
+      player.onGround = false;
+    }
+  }
+  keys[e.key.toLowerCase()] = true;
+  keys[e.key] = true;
+});
+window.addEventListener('keyup', (e) => {
+  keys[e.key.toLowerCase()] = false;
+  keys[e.key] = false;
+});
+
+document.querySelectorAll('.touch-btn').forEach((btn) => {
+  const key = btn.getAttribute('data-key');
+  const press = (e) => {
+    e.preventDefault();
+    if (key === ' ' && player.onGround) {
+      player.vy = JUMP_FORCE;
+      player.onGround = false;
+    }
+    keys[key] = true;
+  };
+  const release = (e) => { e.preventDefault(); keys[key] = false; };
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('touchend', release, { passive: false });
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+});
+
+// =================================================================
+//  BUTTONS
+// =================================================================
+$('start-btn').addEventListener('click', startGame);
+$('skip-btn').addEventListener('click', () => {
+  $('title-screen').classList.add('hidden');
+  showWin(true);
+});
+$('d-close').addEventListener('click', closeDialog);
+$('restart-btn').addEventListener('click', () => window.location.reload());
+
+function startGame() {
+  $('title-screen').classList.add('hidden');
+  $('game-screen').style.display = 'flex';
+  resize();
+  gameRunning = true;
+  requestAnimationFrame(loop);
+  showToast('Run → Jump SPACE');
+}
+
+// =================================================================
+//  DIALOG
+// =================================================================
+function openDialog(job) {
+  dialogOpen = true;
+  $('d-emoji').textContent = job.emoji;
+  $('d-title').textContent = job.title;
+  $('d-subtitle').textContent = job.subtitle;
+  $('d-dates').textContent = job.dates;
+  $('d-stack').textContent = job.stack;
+  const ul = $('d-bullets');
+  ul.innerHTML = '';
+  job.bullets.forEach(b => {
+    const li = document.createElement('li');
+    li.textContent = b;
+    ul.appendChild(li);
+  });
+  $('dialog').style.display = 'flex';
+  if (!jobsRead.has(job.id)) {
+    jobsRead.add(job.id);
+    $('jobs-count').textContent = jobsRead.size;
+    score += 500;
+    updateScore();
+  }
+}
+function closeDialog() {
+  $('dialog').style.display = 'none';
+  dialogOpen = false;
+}
+function updateScore() {
+  $('score').textContent = score.toString().padStart(4, '0');
+}
+
+// =================================================================
+//  TOAST
+// =================================================================
+let toastTimer;
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+// =================================================================
+//  WIN
+// =================================================================
+function showWin(skipMode = false) {
+  gameRunning = false;
+  $('game-screen').style.display = 'none';
+  $('win-screen').classList.remove('hidden');
+  if (!skipMode) launchConfetti();
+}
+let confettiParticles = [];
+function launchConfetti() {
+  confettiParticles = [];
+  const colors = ['#e53935', '#43a047', '#1976d2', '#fbc02d', '#8e24aa', '#ff7043'];
+  for (let i = 0; i < 220; i++) {
+    confettiParticles.push({
+      x: Math.random() * window.innerWidth,
+      y: -20 - Math.random() * 100,
+      vx: (Math.random() - 0.5) * 4,
+      vy: 2 + Math.random() * 4,
+      size: 4 + Math.random() * 6,
+      color: colors[(Math.random() * colors.length) | 0],
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 0.2,
+    });
+  }
+  requestAnimationFrame(confettiLoop);
+}
+function confettiLoop() {
+  cctx.clearRect(0, 0, confetti.width, confetti.height);
+  let alive = false;
+  confettiParticles.forEach((p) => {
+    p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vy += 0.05;
+    if (p.y < confetti.height + 50) alive = true;
+    cctx.save();
+    cctx.translate(p.x, p.y);
+    cctx.rotate(p.rot);
+    cctx.fillStyle = p.color;
+    cctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+    cctx.restore();
+  });
+  if (alive) requestAnimationFrame(confettiLoop);
+  else cctx.clearRect(0, 0, confetti.width, confetti.height);
+}
+
+// =================================================================
+//  PHYSICS HELPERS
+// =================================================================
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+// =================================================================
+//  GAME LOOP
+// =================================================================
+let lastTime = 0;
+function loop(t) {
+  if (!gameRunning) return;
+  const dt = Math.min(33, t - lastTime) / 16.67; // normalize to 60fps
+  lastTime = t;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  if (dialogOpen) return;
+
+  // ----- Horizontal input -----
+  let inputX = 0;
+  if (keys['arrowleft']  || keys['ArrowLeft']  || keys['a']) inputX -= 1;
+  if (keys['arrowright'] || keys['ArrowRight'] || keys['d']) inputX += 1;
+
+  if (inputX !== 0) {
+    player.vx += inputX * MOVE_ACCEL * dt;
+    player.facing = inputX > 0 ? 'right' : 'left';
+  } else {
+    player.vx *= FRICTION;
+    if (Math.abs(player.vx) < 0.05) player.vx = 0;
+  }
+  player.vx = Math.max(-MOVE_MAX, Math.min(MOVE_MAX, player.vx));
+
+  // ----- Gravity -----
+  player.vy += GRAVITY * dt;
+  if (player.vy > 16) player.vy = 16;
+
+  // ----- Apply X then resolve -----
+  player.x += player.vx * dt;
+  if (player.x < 0) { player.x = 0; player.vx = 0; }
+  if (player.x + player.w > WORLD_W) { player.x = WORLD_W - player.w; player.vx = 0; }
+
+  // X collisions with floating platforms (treat as solid)
+  PLATFORMS.forEach((p) => {
+    if (rectsOverlap(player, p)) {
+      if (player.vx > 0) player.x = p.x - player.w;
+      else if (player.vx < 0) player.x = p.x + p.w;
+      player.vx = 0;
+    }
+  });
+  // X collisions with question blocks
+  QBLOCKS.forEach((q) => {
+    if (rectsOverlap(player, q)) {
+      if (player.vx > 0) player.x = q.x - player.w;
+      else if (player.vx < 0) player.x = q.x + q.w;
+      player.vx = 0;
+    }
+  });
+
+  // ----- Apply Y -----
+  player.y += player.vy * dt;
+  player.onGround = false;
+
+  // ground tile
+  if (player.y + player.h >= GROUND_Y) {
+    player.y = GROUND_Y - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  }
+
+  // Y collisions with platforms
+  PLATFORMS.forEach((p) => {
+    if (rectsOverlap(player, p)) {
+      if (player.vy > 0) {
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      } else if (player.vy < 0) {
+        player.y = p.y + p.h;
+        player.vy = 0;
+      }
+    }
+  });
+
+  // Y collisions with question blocks → if hitting from below, trigger
+  QBLOCKS.forEach((q) => {
+    if (rectsOverlap(player, q)) {
+      if (player.vy < 0) {
+        // hit from below
+        player.y = q.y + q.h;
+        player.vy = 1;
+        if (!q.hit) {
+          q.hit = true;
+          q.bobT = 0;
+          const job = JOB_DATA.find(j => j.id === q.jobId);
+          openDialog(job);
+          showToast(`📦 ${job.title.split('—')[0].trim()}!`);
+        } else {
+          // re-open dialog if hit again
+          const job = JOB_DATA.find(j => j.id === q.jobId);
+          openDialog(job);
+        }
+      } else if (player.vy > 0) {
+        player.y = q.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+    }
+  });
+
+  // Walk anim timer
+  if (Math.abs(player.vx) > 0.5 && player.onGround) player.walkT += dt * 0.3;
+
+  // ----- Coin collection -----
+  COINS.forEach((c) => {
+    if (c.collected) return;
+    if (Math.hypot((c.x) - (player.x + player.w / 2), (c.y) - (player.y + player.h / 2)) < 26) {
+      c.collected = true;
+      coinsCollected++;
+      score += 100;
+      $('coins-count').textContent = coinsCollected;
+      updateScore();
+      showToast(`+100 ${c.name} ${c.emoji}`);
+    }
+  });
+
+  // ----- Hint for near unhit block -----
+  nearBlock = null;
+  QBLOCKS.forEach((q) => {
+    if (q.hit) return;
+    if (Math.abs((q.x + q.w / 2) - (player.x + player.w / 2)) < 80 && Math.abs(player.y - q.y) < 200) {
+      nearBlock = q;
+    }
+  });
+  $('interact-hint').classList.toggle('hidden', !nearBlock);
+
+  // ----- Camera -----
+  cameraX = player.x + player.w / 2 - viewW / 2;
+  cameraX = Math.max(0, Math.min(WORLD_W - viewW, cameraX));
+
+  // ----- Stage name update -----
+  let stage = 'DEV WORLD 1-1';
+  if (player.x > 5000) stage = 'STAGE: INWORK GLOBAL';
+  else if (player.x > 3900) stage = 'STAGE: FREELANCE';
+  else if (player.x > 2800) stage = 'STAGE: BUILDER.AI';
+  else if (player.x > 1600) stage = 'STAGE: CURIEO';
+  else if (player.x > 600)  stage = 'STAGE: EDUCATION';
+  $('stage-name').textContent = stage;
+
+  // ----- Win condition (touch flag) -----
+  if (!won && player.x + player.w >= FLAG.x) {
+    won = true;
+    setTimeout(() => showWin(false), 600);
+  }
+}
+
+// =================================================================
+//  RENDER
+// =================================================================
+function render() {
+  const W = canvas.width, H = canvas.height;
+  // sky already painted via wrap gradient — paint sky here for stable coloring
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, '#6ec6ff');
+  skyGrad.addColorStop(1, '#b3e5fc');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // World render uses cameraX offset; scale so internal coords ~= screen height
+  const scale = H / VIEW_H;
+  ctx.save();
+  ctx.scale(scale, scale);
+  const view = W / scale;
+
+  // Clouds (parallax 0.3)
+  CLOUDS.forEach((c) => {
+    const sx = c.x - cameraX * 0.3;
+    const wrapped = ((sx % (WORLD_W * 0.6)) + WORLD_W * 0.6) % (WORLD_W * 0.6);
+    drawCloud(wrapped, c.y, c.w);
+  });
+
+  // Hills (parallax 0.55)
+  HILLS.forEach((h) => {
+    const hx = h.x - cameraX * 0.55;
+    drawHill(hx, h.h);
+  });
+
+  // Ground (parallax 1.0)
+  drawGround(view);
+
+  // Question blocks
+  QBLOCKS.forEach((q) => {
+    q.bobT += 0.05;
+    drawQBlock(q);
+  });
+
+  // Floating platforms
+  PLATFORMS.forEach((p) => drawPlatform(p));
+
+  // Coins
+  COINS.forEach((c) => { if (!c.collected) drawCoin(c); });
+
+  // Flag
+  drawFlag();
+
+  // Player
+  drawPlayer();
+
+  ctx.restore();
+}
+
+function drawCloud(x, y, w) {
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath();
+  ctx.arc(x, y, w * 0.4, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.3, y - 8, w * 0.35, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.55, y + 4, w * 0.4, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.85, y, w * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawHill(x, h) {
+  ctx.fillStyle = '#388e3c';
+  ctx.beginPath();
+  ctx.moveTo(x - 120, GROUND_Y);
+  ctx.quadraticCurveTo(x, GROUND_Y - h, x + 120, GROUND_Y);
+  ctx.closePath();
+  ctx.fill();
+  // darker shade
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath();
+  ctx.moveTo(x - 60, GROUND_Y);
+  ctx.quadraticCurveTo(x + 20, GROUND_Y - h * 0.85, x + 120, GROUND_Y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawGround(viewWidth) {
+  // grass strip
+  ctx.fillStyle = '#43a047';
+  ctx.fillRect(0, GROUND_Y, viewWidth + 40, 12);
+  // dirt
+  ctx.fillStyle = '#8d6e63';
+  ctx.fillRect(0, GROUND_Y + 12, viewWidth + 40, VIEW_H - GROUND_Y - 12);
+  // dirt blocks
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1;
+  const startX = -((cameraX) % 40);
+  for (let x = startX; x < viewWidth + 40; x += 40) {
+    ctx.strokeRect(x, GROUND_Y + 12, 40, 40);
+    ctx.strokeRect(x, GROUND_Y + 52, 40, 40);
+  }
+  // grass tufts
+  const gStart = -((cameraX) % 60);
+  ctx.fillStyle = '#2e7d32';
+  for (let x = gStart; x < viewWidth + 60; x += 60) {
+    ctx.fillRect(x + 20, GROUND_Y - 4, 4, 8);
+    ctx.fillRect(x + 24, GROUND_Y - 6, 4, 10);
+    ctx.fillRect(x + 28, GROUND_Y - 4, 4, 8);
+  }
+}
+
+function drawPlatform(p) {
+  const x = p.x - cameraX;
+  ctx.fillStyle = '#d2691e';
+  ctx.fillRect(x, p.y, p.w, p.h);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(x, p.y + p.h - 3, p.w, 3);
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, p.y, p.w, p.h);
+  // brick lines
+  ctx.beginPath();
+  for (let i = 16; i < p.w; i += 16) {
+    ctx.moveTo(x + i, p.y);
+    ctx.lineTo(x + i, p.y + p.h);
+  }
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.stroke();
+}
+
+function drawQBlock(q) {
+  const x = q.x - cameraX;
+  const bob = q.hit ? 0 : Math.sin(q.bobT) * 2;
+  const color = q.hit ? '#8d6e63' : '#ffb300';
+  ctx.fillStyle = color;
+  ctx.fillRect(x, q.y + bob, q.w, q.h);
+  // border
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, q.y + bob, q.w, q.h);
+  // rivets
+  ctx.fillStyle = '#1a1a1a';
+  [[4,4],[q.w-7,4],[4,q.h-7],[q.w-7,q.h-7]].forEach(([dx,dy]) => {
+    ctx.fillRect(x + dx, q.y + bob + dy, 3, 3);
+  });
+  // ? mark or job emoji once hit
+  ctx.font = "bold 20px 'Press Start 2P', monospace";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  if (q.hit) {
+    const job = JOB_DATA.find(j => j.id === q.jobId);
+    ctx.font = '22px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(job.emoji, x + q.w/2, q.y + bob + q.h/2);
+  } else {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText('?', x + q.w/2, q.y + bob + q.h/2 + 1);
+  }
+}
+
+function drawCoin(c) {
+  const x = c.x - cameraX;
+  const bob = Math.sin(performance.now() * 0.005 + c.x * 0.01) * 4;
+  // glow
+  const g = ctx.createRadialGradient(x, c.y + bob, 4, x, c.y + bob, 22);
+  g.addColorStop(0, 'rgba(255,235,59,0.7)');
+  g.addColorStop(1, 'rgba(255,235,59,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, c.y + bob, 22, 0, Math.PI * 2); ctx.fill();
+  // coin
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath(); ctx.arc(x, c.y + bob, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#b8860b';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // emoji
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(c.emoji, x, c.y + bob);
+  // label
+  ctx.font = "10px 'VT323', monospace";
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText(c.name, x, c.y + bob + 22);
+}
+
+function drawFlag() {
+  const x = FLAG.x - cameraX;
+  // pole
+  ctx.fillStyle = '#9e9e9e';
+  ctx.fillRect(x, FLAG.y, 6, FLAG.h);
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, FLAG.y, 6, FLAG.h);
+  // flag
+  ctx.fillStyle = '#e53935';
+  ctx.beginPath();
+  ctx.moveTo(x + 6, FLAG.y + 10);
+  ctx.lineTo(x + 60, FLAG.y + 24);
+  ctx.lineTo(x + 6, FLAG.y + 38);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // banner text
+  ctx.font = "bold 12px 'Press Start 2P', monospace";
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('HIRE', x + 24, FLAG.y + 24);
+  // sign at base
+  ctx.fillStyle = '#fffde7';
+  ctx.fillRect(x - 30, FLAG.y + FLAG.h - 50, 100, 40);
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x - 30, FLAG.y + FLAG.h - 50, 100, 40);
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = "bold 10px 'Press Start 2P', monospace";
+  ctx.fillText('HIRE ME', x + 20, FLAG.y + FLAG.h - 32);
+  ctx.fillText('→', x + 20, FLAG.y + FLAG.h - 18);
+}
+
+function drawPlayer() {
+  const x = player.x - cameraX;
+  const y = player.y;
+  const facing = player.facing;
+  const bob = (player.onGround && Math.abs(player.vx) > 0.5)
+    ? Math.sin(player.walkT) * 1.5 : 0;
+  const inAir = !player.onGround;
+
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x + player.w/2, GROUND_Y + 6, 14, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // body
+  ctx.save();
+  ctx.translate(x + player.w/2, y);
+  ctx.scale(facing === 'left' ? -1 : 1, 1);
+  const px = -player.w/2;
+
+  // hat
+  ctx.fillStyle = '#1976d2';
+  ctx.fillRect(px + 4, bob, 20, 6);
+  ctx.fillRect(px + 2, bob + 4, 24, 4);
+  // hair
+  ctx.fillStyle = '#2c1810';
+  ctx.fillRect(px + 6, bob + 8, 16, 2);
+
+  // face
+  ctx.fillStyle = '#ffe0b2';
+  ctx.fillRect(px + 6, bob + 10, 16, 10);
+  // eye
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(px + 16, bob + 13, 3, 3);
+  // smile (when not in air)
+  if (!inAir) {
+    ctx.fillRect(px + 14, bob + 18, 4, 1);
+  } else {
+    // open mouth
+    ctx.fillRect(px + 15, bob + 17, 3, 3);
+  }
+
+  // body / shirt (Rails red)
+  ctx.fillStyle = '#e53935';
+  ctx.fillRect(px + 4, bob + 20, 20, 10);
+  // emblem
+  ctx.fillStyle = '#fff';
+  ctx.font = "bold 8px 'Press Start 2P', monospace";
+  ctx.textAlign = 'center';
+  ctx.fillText('R', 0, bob + 28);
+
+  // arms (animate when running)
+  const armSwing = (player.onGround && Math.abs(player.vx) > 0.5) ? Math.sin(player.walkT * 2) * 3 : 0;
+  ctx.fillStyle = '#ffe0b2';
+  ctx.fillRect(px + 0, bob + 21 + armSwing, 4, 8);
+  ctx.fillRect(px + 24, bob + 21 - armSwing, 4, 8);
+
+  // legs
+  ctx.fillStyle = '#1565c0';
+  if (inAir) {
+    ctx.fillRect(px + 7, bob + 30, 5, 6);
+    ctx.fillRect(px + 16, bob + 30, 5, 6);
+  } else {
+    const legA = Math.sin(player.walkT * 2) * 3;
+    const legB = -legA;
+    ctx.fillRect(px + 7, bob + 30, 5, 6 + Math.abs(legA));
+    ctx.fillRect(px + 16, bob + 30, 5, 6 + Math.abs(legB));
+  }
+  // shoes
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(px + 6, bob + 36, 7, 2);
+  ctx.fillRect(px + 15, bob + 36, 7, 2);
+
+  ctx.restore();
+}
+
+// Wait for fonts then size canvas
+window.addEventListener('load', () => {
+  // ready
+});
+</script>
+</body>
+</html>
